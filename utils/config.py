@@ -7,12 +7,12 @@ config = None
 config_folder = os.path.dirname(os.path.realpath(__file__))
 
 # TODO: fix this
-with open(config_folder + "/../config.yml", 'r') as stream:
+with open(f"{config_folder}/../config.yml", 'r') as stream:
     try:
         config = yaml.load(stream, Loader=yaml.SafeLoader)
     except yaml.YAMLError as e:
         # logger is not yet loaded, print it roughly
-        print('[!][%s] %s' % ('config', e))
+        print(f'[!][config] {e}')
 
 base_path = os.path.expanduser(config["base_path"])
 log_response = config["log_response"]

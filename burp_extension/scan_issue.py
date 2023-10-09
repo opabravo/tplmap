@@ -39,13 +39,6 @@ class ScanIssue( IScanIssue ):
         The template engine appears to be <b>{template}</b>.<br><br>
         """
 
-        render_template = """
-        The payload <b>{payload}</b> was submitted in the <b>{parameter}</b> parameter.
-        This payload contains an <b>{template}</b> template statement.<br><br>
-        The server response contained the string <b>{rendered}</b>.
-        This indicates that the payload is being interpreted by a server-side template engine.<br><br>
-        """
-
         blind_template = """
         The time-based blind payload <b>{payload}</b> was submitted in the <b>{parameter}</b> parameter.
         The application took {delta:f} milliseconds to respond to the request, compared with {average} milliseconds for the average, indicating that the injected command caused a time delay.<br><br>
@@ -77,6 +70,13 @@ class ScanIssue( IScanIssue ):
 
         if self._channel.technique == 'render':
             payload = self._channel.messages[ self._channel.detect_offset - 1 ].get( 'injection' )
+            render_template = """
+        The payload <b>{payload}</b> was submitted in the <b>{parameter}</b> parameter.
+        This payload contains an <b>{template}</b> template statement.<br><br>
+        The server response contained the string <b>{rendered}</b>.
+        This indicates that the payload is being interpreted by a server-side template engine.<br><br>
+        """
+
             technique_part = render_template.format(
                 parameter = parameter,
                 template = template,
@@ -138,7 +138,7 @@ class ScanIssue( IScanIssue ):
             response = requestResponse.getResponse()
             responseMarkBytes = self._helpers.stringToBytes( responseMarkString )
             start = self._helpers.indexOf( response, responseMarkBytes, False, 0, len( response ) )
-            if -1 < start:
+            if start > -1:
                 responseMarkers = [ array( 'i',[ start, start + len( responseMarkBytes ) ] ) ]
 
         requestHighlights = [ self._insertionPoint.getPayloadOffsets( self._helpers.stringToBytes( injection ) ) ]

@@ -136,18 +136,18 @@ class BaseTest(object):
 
         obj, data = self._get_detection_obj_data(self.url)
         self.assertEqual(data, self.expected_data)
-        
+
         if not EXTRA_UPLOAD:
             return
 
-        remote_temp_path = '/tmp/tplmap_%s.tmp' % rand.randstr_n(10)
+        remote_temp_path = f'/tmp/tplmap_{rand.randstr_n(10)}.tmp'
         # Send long binary
         data = open('/bin/ls', 'rb').read()
         obj.write(data, remote_temp_path)
         self.assertEqual(obj.md5(remote_temp_path), strings.md5(data))
-        obj.execute('rm %s' % (remote_temp_path))
+        obj.execute(f'rm {remote_temp_path}')
 
-        remote_temp_path = '/tmp/tplmap_%s.tmp' % rand.randstr_n(10)
+        remote_temp_path = f'/tmp/tplmap_{rand.randstr_n(10)}.tmp'
         # Send short ASCII data, without removing it
         data = 'SHORT ASCII DATA'
         obj.write(data, remote_temp_path)
@@ -162,7 +162,7 @@ class BaseTest(object):
         data = 'NEW DATA'
         obj.write(data, remote_temp_path)
         self.assertEqual(obj.md5(remote_temp_path), strings.md5(data))
-        obj.execute('rm %s' % (remote_temp_path))
+        obj.execute(f'rm {remote_temp_path}')
             
     def test_upload_blind(self):
 
@@ -176,7 +176,7 @@ class BaseTest(object):
             return
 
         # Send file without --force-overwrite, should fail
-        remote_temp_path = '/tmp/tplmap_%s.tmp' % rand.randstr_n(10)
+        remote_temp_path = f'/tmp/tplmap_{rand.randstr_n(10)}.tmp'
         obj.write('AAAA', remote_temp_path)
         self.assertFalse(os.path.exists(remote_temp_path))
 
@@ -186,17 +186,17 @@ class BaseTest(object):
         # Send long binary
         data = open('/bin/ls', 'rb').read()
         obj.write(data, remote_temp_path)
-        
+
         # Since it's blind, read md5 from disk
         checkdata = open(remote_temp_path, 'rb').read()
         self.assertEqual(strings.md5(checkdata), strings.md5(data))
         os.unlink(remote_temp_path)
-        
-        remote_temp_path = '/tmp/tplmap_%s.tmp' % rand.randstr_n(10)
+
+        remote_temp_path = f'/tmp/tplmap_{rand.randstr_n(10)}.tmp'
         # Send short ASCII data
         data = 'SHORT ASCII DATA'
         obj.write(data, remote_temp_path)
-        
+
         checkdata = open(remote_temp_path, 'rb').read()
         self.assertEqual(strings.md5(checkdata), strings.md5(data))
         os.unlink(remote_temp_path)    
