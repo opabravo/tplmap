@@ -142,10 +142,9 @@ class Plugin(object):
             self._detect_render()
 
             # If render is not set, check unreliable render
-            if self.get('render') == None:
+            if self.get('render') is None:
                 self._detect_unreliable_render()
 
-            # Else, print and execute rendered_detected()
             else:
 
                 # If here, the rendering is confirmed
@@ -159,7 +158,7 @@ class Plugin(object):
                     repr(suffix).strip("'"),
                     )
                 )
-                
+
                 # Clean up any previous unreliable render data
                 self.delete('unreliable_render')
                 self.delete('unreliable')
@@ -181,7 +180,7 @@ class Plugin(object):
 
                 if self.get('blind'):
 
-                    log.info('%s plugin has confirmed blind injection' % (self.plugin))
+                    log.info(f'{self.plugin} plugin has confirmed blind injection')
 
                     # Clean up any previous unreliable render data
                     self.delete('unreliable_render')
@@ -242,9 +241,8 @@ class Plugin(object):
             return
 
         # Print what it's going to be tested
-        log.debug('%s plugin is testing unreliable rendering on text context' % (
-                self.plugin
-            )
+        log.debug(
+            f'{self.plugin} plugin is testing unreliable rendering on text context'
         )
 
         # Prepare base operation to be evalued server-side
@@ -290,10 +288,7 @@ class Plugin(object):
             return
 
         # Print what it's going to be tested
-        log.info('%s plugin is testing blind injection' % (
-                    self.plugin
-                )
-        )
+        log.info(f'{self.plugin} plugin is testing blind injection')
 
         for prefix, suffix in self._generate_contexts():
 
@@ -380,7 +375,7 @@ class Plugin(object):
         blind = kwargs.get('blind', False)
 
         injection = prefix + code + suffix
-        log.debug('[request %s] %s' % (self.plugin, repr(self.channel.url)))
+        log.debug(f'[request {self.plugin}] {repr(self.channel.url)}')
 
         # If the request is blind
         if blind:
@@ -396,7 +391,9 @@ class Plugin(object):
 
             result = delta >= expected_delay
 
-            log.debug('[blind %s] code above took %s (%s-%s). %s is the threshold, returning %s' % (self.plugin, str(delta), str(end), str(start), str(expected_delay), str(result)))
+            log.debug(
+                f'[blind {self.plugin}] code above took {str(delta)} ({end}-{start}). {str(expected_delay)} is the threshold, returning {result}'
+            )
 
             self._inject_verbose = {
                 'result': result,
@@ -434,14 +431,14 @@ class Plugin(object):
         # If header == '', do not send headers
         header_template = kwargs.get('header')
         if header_template != '':
-            
+
             header_template = kwargs.get('header', self.get('header'))
             if not header_template:
                 header_template = self.actions.get('render',{}).get('header')
-                
+
             if header_template:
                 header_rand = kwargs.get('header_rand', self.get('header_rand', rand.randint_n(10)))
-                
+
                 if '%(header)s' in header_template:
                     header = header_template % ({ 'header' : header_rand })
                 else:
@@ -454,11 +451,11 @@ class Plugin(object):
         # If trailer == '', do not send headers
         trailer_template = kwargs.get('trailer')
         if trailer_template != '':
-                
+
             trailer_template = kwargs.get('trailer', self.get('trailer'))
             if not trailer_template:
                 trailer_template = self.actions.get('render',{}).get('trailer')
-                        
+
             if trailer_template:
                 trailer_rand = kwargs.get('trailer_rand', self.get('trailer_rand', rand.randint_n(10)))
 
@@ -470,23 +467,23 @@ class Plugin(object):
         else:
             trailer_rand = 0
             trailer = ''
-            
+
         payload_template = kwargs.get('render', self.get('render'))
         if not payload_template:
             payload_template = self.actions.get('render',{}).get('render')
         if not payload_template:
             # Exiting, actions.render.render is not set
             return None
-        
+
         payload = payload_template % ({ 'code': code })
-            
+
         prefix = kwargs.get('prefix', self.get('prefix', ''))
         suffix = kwargs.get('suffix', self.get('suffix', ''))
 
         blind = kwargs.get('blind', False)
-        
+
         injection = header + payload + trailer
-        
+
         # Save the average HTTP request time of rendering in order
         # to better tone the blind request timeouts.
         result_raw = self.inject(
@@ -498,20 +495,19 @@ class Plugin(object):
 
         if blind:
             return result_raw
-        else:
-            result = ''
+        result = ''
 
-            # Return result_raw if header and trailer are not specified
-            if not header and not trailer:
-                return result_raw
+        # Return result_raw if header and trailer are not specified
+        if not header and not trailer:
+            return result_raw
 
-            # Cut the result using the header and trailer if specified
-            if header:
-                before,_,result_after = result_raw.partition(str(header_rand))
-            if trailer and result_after:
-                result,_,after = result_after.partition(str(trailer_rand))
+        # Cut the result using the header and trailer if specified
+        if header:
+            before,_,result_after = result_raw.partition(str(header_rand))
+        if trailer and result_after:
+            result,_,after = result_after.partition(str(trailer_rand))
 
-            return result.strip() if result else result
+        return result.strip() if result else result
 
     def set(self, key, value):
         self.channel.data[key] = value
@@ -565,12 +561,9 @@ class Plugin(object):
         result = getattr(self, call_name)(
             code = execution_code,
         )
-        
+
         # Check md5 result format
-        if re.match(r"([a-fA-F\d]{32})", result):
-            return result
-        else:
-            return None
+        return result if re.match(r"([a-fA-F\d]{32})", result) else None
 
     """ Overridable function to detect read capabilities. """
     def detect_read(self):
@@ -607,7 +600,7 @@ class Plugin(object):
         )
         data = base64.b64decode(data_b64encoded)
 
-        if not md5(data) == md5_remote:
+        if md5(data) != md5_remote:
             log.warn('Remote file md5 mismatch, check manually')
         else:
             log.info('File downloaded correctly')
@@ -642,7 +635,7 @@ class Plugin(object):
         # Upload file in chunks of 500 characters
         for chunk in chunkit(data, 500):
 
-            log.debug('[b64 encoding] %s' % chunk)
+            log.debug(f'[b64 encoding] {chunk}')
             chunk_b64 = base64.urlsafe_b64encode(chunk)
 
             execution_code = payload_write % ({ 'path' : remote_path, 'chunk_b64' : chunk_b64 })
@@ -652,7 +645,7 @@ class Plugin(object):
 
         if self.get('blind'):
             log.warn('Blind upload can\'t check the upload correctness, check manually')
-        elif not md5(data) == self.md5(remote_path):
+        elif md5(data) != self.md5(remote_path):
             log.warn('Remote file md5 mismatch, check manually')
         else:
             log.warn('File uploaded correctly')
@@ -673,7 +666,7 @@ class Plugin(object):
             return
 
         if '%(code_b64)s' in payload:
-            log.debug('[b64 encoding] %s' % code)
+            log.debug(f'[b64 encoding] {code}')
             execution_code = payload % ({ 'code_b64' : compatible_url_safe_base64_encode(code) })
         else:
             execution_code = payload % ({ 'code' : code })
@@ -700,7 +693,7 @@ class Plugin(object):
             return
 
         if '%(code_b64)s' in payload:
-            log.debug('[b64 encoding] %s' % code)
+            log.debug(f'[b64 encoding] {code}')
             execution_code = payload % ({ 'code_b64' : compatible_url_safe_base64_encode(code) })
         else:
             execution_code = payload % ({ 'code' : code })
@@ -731,7 +724,7 @@ class Plugin(object):
         expected_delay = self._get_expected_delay()
 
         if '%(code_b64)s' in payload_action:
-            log.debug('[b64 encoding] %s' % code)
+            log.debug(f'[b64 encoding] {code}')
             execution_code = payload_action % ({
                 'code_b64' : compatible_url_safe_base64_encode(code),
                 'delay' : expected_delay
@@ -766,7 +759,7 @@ class Plugin(object):
         expected_delay = self._get_expected_delay()
 
         if '%(code_b64)s' in payload_action:
-            log.debug('[b64 encoding] %s' % code)
+            log.debug(f'[b64 encoding] {code}')
             execution_code = payload_action % ({
                 'code_b64' : compatible_url_safe_base64_encode(code),
                 'delay' : expected_delay

@@ -22,7 +22,7 @@ class TcpServer:
         self.forward_data()
 
     def connect_socket(self):
-        if(self.connect):
+        if self.connect:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self.hostname, self.port))
 
@@ -38,7 +38,7 @@ class TcpServer:
             try:
                 server.bind(('0.0.0.0', self.port))
             except socket.error as e:
-                log.error("Port bind on 0.0.0.0:%s has failed: %s" % (self.port, str(e)))
+                log.error(f"Port bind on 0.0.0.0:{self.port} has failed: {str(e)}")
                 return
 
             server.listen(1)

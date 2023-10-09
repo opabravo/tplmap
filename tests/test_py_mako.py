@@ -164,11 +164,13 @@ class MakoTest(unittest.TestCase, BaseTest):
     def test_reflection_limit(self):
         template = '%s'
 
-        channel = Channel({
-            'url' : 'http://127.0.0.1:15001/limit/mako?tpl=%s&inj=*&limit=20' % template,
-            'injection_tag': '*',
-            'technique': 'R'
-        })
+        channel = Channel(
+            {
+                'url': f'http://127.0.0.1:15001/limit/mako?tpl={template}&inj=*&limit=20',
+                'injection_tag': '*',
+                'technique': 'R',
+            }
+        )
 
         Mako(channel).detect()
 

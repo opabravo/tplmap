@@ -31,9 +31,9 @@ class ConfigTab( ITab, JPanel ):
             self._plugin_groups[ parent ].append( plugin )
         self._pluginCheckBoxes = []
         for pluginGroup in self._plugin_groups.values():
-            for plugin in pluginGroup:
-                self._pluginCheckBoxes.append( PluginCheckBox( plugin ) )
-
+            self._pluginCheckBoxes.extend(
+                PluginCheckBox(plugin) for plugin in pluginGroup
+            )
         self._positionReplaceCheckBox = JCheckBox( 'Replace', True )
         self._positionAppendCheckBox = JCheckBox( 'Append', False )
 
@@ -92,7 +92,7 @@ class ConfigTab( ITab, JPanel ):
         return self._levelComboBox.getSelectedIndex()
 
     def getTechniques( self ):
-        return '%s%s' % ( 'R' if self._techRenderedCheckBox.isSelected() else '', 'T' if self._techTimebasedCheckBox.isSelected() else '' )
+        return f"{'R' if self._techRenderedCheckBox.isSelected() else ''}{'T' if self._techTimebasedCheckBox.isSelected() else ''}"
 
     def getEngines( self ):
         return [ checkbox.getPlugin() for checkbox in self._pluginCheckBoxes if checkbox.isSelected() ]

@@ -16,7 +16,7 @@ class Channel:
     def __init__(self, args):
 
         self.args = args
-        
+
         # Consider # as part of the query string, end encode \n
         self.url = self.args.get('url').replace('#', '%23').replace('\\n', '%0A')
 
@@ -29,8 +29,7 @@ class Channel:
         self.injs = []
         self.inj_idx = 0
 
-        proxy = self.args.get('proxy')
-        if proxy:
+        if proxy := self.args.get('proxy'):
             self.proxies = {
                 'http': proxy,
                 'https': proxy
@@ -48,7 +47,7 @@ class Channel:
         self._parse_get()
         self._parse_post()
         self._parse_header()
-        
+
         # If there are not injection, inject
         # all the passed GET, POST, and Headers
         if not self.injs:
@@ -58,7 +57,7 @@ class Channel:
             self._parse_header(all_injectable = True)
 
         self._parse_method()
-        
+
         # Disable requests warning in case of 
         # skipped SSL certificate check
         urllib3.disable_warnings()
@@ -77,11 +76,11 @@ class Channel:
 
         url_path = urlparse.urlparse(self.url).path
 
-        if not self.tag in url_path:
+        if self.tag not in url_path:
             return
-            
+
         url_path_base_index = self.url.find(url_path)
-        
+
         for index in [ 
             i for i in range(url_path_base_index, url_path_base_index + len(url_path)) if self.url[i] == self.tag 
         ]:
@@ -94,15 +93,9 @@ class Channel:
 
     def _parse_cookies(self):
         
-        # Just add cookies as headers, to avoid duplicating
-        # the parsing code. Concatenate to avoid headers with
-        # the same key.
-        
-        cookies = self.args.get('cookies', [])
-        
-        if cookies:
-            cookie_string = 'Cookie: %s' % ';'.join(cookies)
-            
+        if cookies := self.args.get('cookies', []):
+            cookie_string = f"Cookie: {';'.join(cookies)}"
+
             if not self.args.get('headers'):
                 self.args['headers'] = []
             self.args['headers'].append(cookie_string)
@@ -126,7 +119,7 @@ class Channel:
                     'part' : 'param',
                     'param' : param
                 })
-                
+
             if self.tag in value or all_injectable:
                 self.injs.append({
                     'field' : 'Header',
@@ -134,13 +127,13 @@ class Channel:
                     'value': value,
                     'param' : param
                 })
-                
+
         # Set user agent if not set already
         user_agent = self.args.get('user_agent')
         if not user_agent:
-            user_agent = 'tplmap/%s' % self.args.get('version')
-            
-        if not 'user-agent' in [ p.lower() for p in self.header_params.keys() ]:
+            user_agent = f"tplmap/{self.args.get('version')}"
+
+        if 'user-agent' not in [p.lower() for p in self.header_params.keys()]:
             self.header_params['User-Agent'] = user_agent
 
     def _parse_post(self, all_injectable = False):
@@ -201,32 +194,32 @@ class Channel:
         post_params = deepcopy(self.post_params)
         header_params = deepcopy(self.header_params)
         url_params = self.base_url
-        
+
         # Pick current injection by index
         inj = deepcopy(self.injs[self.inj_idx])
-        
+
         if inj['field'] == 'URL':
-            
+
             position = inj['position']
-            
+
             url_params = self.base_url[:position] + injection + self.base_url[position+1:]
-        
+
         elif inj['field'] == 'POST':
-        
+
             if inj.get('part') == 'param':
                 # Inject injection within param
                 old_value = post_params[inj.get('param')]
                 del post_params[inj.get('param')]
-                
+
                 if self.tag in inj.get('param'):
                     new_param = inj.get('param').replace(self.tag, injection)
                 else:
                     new_param = injection
-                    
+
                 post_params[new_param] = old_value
-                
+
             if inj.get('part') == 'value':
-                
+
                 # If injection in value, replace value by index    
                 if self.tag in post_params[inj.get('param')][inj.get('idx')]:
                     post_params[inj.get('param')][inj.get('idx')] = post_params[inj.get('param')][inj.get('idx')].replace(self.tag, injection)
@@ -234,62 +227,62 @@ class Channel:
                     post_params[inj.get('param')][inj.get('idx')] = injection
 
         elif inj['field'] == 'GET':
-                
+
             if inj.get('part') == 'param':
                 # If injection replaces param, save the value 
                 # with a new param
                 old_value = get_params[inj.get('param')]
                 del get_params[inj.get('param')]
-                
+
                 if self.tag in inj.get('param'):
                     new_param = inj.get('param').replace(self.tag, injection)
                 else:
                     new_param = injection
-                    
+
                 get_params[new_param] = old_value
-                
+
             if inj.get('part') == 'value':
                 # If injection in value, inject value in the correct index
                 if self.tag in get_params[inj.get('param')][inj.get('idx')]:
                     get_params[inj.get('param')][inj.get('idx')] = get_params[inj.get('param')][inj.get('idx')].replace(self.tag, injection)
                 else:
                     get_params[inj.get('param')][inj.get('idx')] = injection
-                
+
         elif inj['field'] == 'Header':
-            
+
             # Headers can't contain \r or \n, sanitize
             injection = injection.replace('\n', '').replace('\r', '')
-                
+
             if inj.get('part') == 'param':
                 # If injection replaces param, save the value 
                 # with a new param
                 old_value = get_params[inj.get('param')]
                 del header_params[inj.get('param')]
-                
+
                 if self.tag in inj.get('param'):
                     new_param = inj.get('param').replace(self.tag, injection)
                 else:
                     new_param = injection
-                    
+
                 header_params[new_param] = old_value                
-                            
+
             if inj.get('part') == 'value':
                 # If injection in value, replace value by index    
-                
+
                 if self.tag in header_params[inj.get('param')]:
                     header_params[inj.get('param')] = header_params[inj.get('param')].replace(self.tag, injection)
                 else:
                     header_params[inj.get('param')] = injection
-        
+
         if self.tag in self.base_url:
-            log.debug('[URL] %s' % url_params)
+            log.debug(f'[URL] {url_params}')
         if get_params:
-            log.debug('[GET] %s' % get_params)
+            log.debug(f'[GET] {get_params}')
         if post_params:
-            log.debug('[POST] %s' % post_params)
+            log.debug(f'[POST] {post_params}')
         if len(header_params) > 1:
-            log.debug('[HEDR] %s' % header_params)
-        
+            log.debug(f'[HEDR] {header_params}')
+
         try:
             result = requests.request(
                 method = self.http_method,
@@ -303,14 +296,13 @@ class Channel:
                 verify = False
                 ).text
         except requests.exceptions.ConnectionError as e:
-            if e and e[0] and e[0][0] == 'Connection aborted.':
-                log.info('Error: connection aborted, bad status line.')
-                result = None
-            else:
+            if not e or not e[0] or e[0][0] != 'Connection aborted.':
                 raise
 
+            log.info('Error: connection aborted, bad status line.')
+            result = None
         if utils.config.log_response:
-            log.debug("""< %s""" % (result) )
+            log.debug(f"""< {result}""")
 
         return result
 

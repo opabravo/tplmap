@@ -23,7 +23,7 @@ def shutdown_server():
     func()
 
 def randomword(length = 8):
-   return ''.join(random.choice(ascii_lowercase) for i in range(length))
+    return ''.join(random.choice(ascii_lowercase) for _ in range(length))
 
 @app.route("/reflect/<engine>")
 def reflect(engine):
@@ -160,7 +160,7 @@ def blind(engine):
 @app.route("/reflect_cookieauth/<engine>")
 def reflect_cookieauth(engine):
 
-    if not request.cookies.get('SID') == 'SECRET':
+    if request.cookies.get('SID') != 'SECRET':
         return randomword()
 
     template = request.values.get('tpl')

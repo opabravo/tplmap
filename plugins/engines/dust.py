@@ -48,35 +48,35 @@ class Dust(javascript.Javascript):
     def _detect_dust(self):
 
         # Print what it's going to be tested
-        log.info('%s plugin is testing rendering' % (
-                self.plugin,
-                )
-        )
+        log.info(f'{self.plugin} plugin is testing rendering')
 
+        payload = 'AA{!c!}AA'
         for prefix, suffix in self._generate_contexts():
 
-            payload = 'AA{!c!}AA'
             header_rand = rand.randint_n(10)
             header = str(header_rand)
             trailer_rand = rand.randint_n(10)
             trailer = str(trailer_rand)
 
-            if 'AAAA' == self.render(
-                    code = payload,
-                    header = header,
-                    trailer = trailer,
-                    header_rand = header_rand,
-                    trailer_rand = trailer_rand,
-                    prefix = prefix,
-                    suffix = suffix
-                ):
+            if (
+                self.render(
+                    code=payload,
+                    header=header,
+                    trailer=trailer,
+                    header_rand=header_rand,
+                    trailer_rand=trailer_rand,
+                    prefix=prefix,
+                    suffix=suffix,
+                )
+                == 'AAAA'
+            ):
                 self.set('header', '%s')
                 self.set('trailer', '%s')
                 self.set('prefix', prefix)
                 self.set('suffix', suffix)
                 self.set('engine', self.plugin.lower())
                 self.set('language', self.language)
-                
+
                 return
 
     """
@@ -87,11 +87,9 @@ class Dust(javascript.Javascript):
         self._detect_dust()
 
         if self.get('engine'):
-    
-            log.info('%s plugin has confirmed injection' % (
-                self.plugin)
-            )
-            
+
+            log.info(f'{self.plugin} plugin has confirmed injection')
+
             # Clean up any previous unreliable render data
             self.delete('unreliable_render')
             self.delete('unreliable')
@@ -103,21 +101,21 @@ class Dust(javascript.Javascript):
             rand_A = rand.randstr_n(2)
             rand_B = rand.randstr_n(2)
             rand_C = rand.randstr_n(2)
-            
+
             expected = rand_A + rand_B + rand_C
 
             if expected in self.inject('%s{@if cond="1"}%s{/if}%s' % (rand_A, rand_B, rand_C)):
                 
-                log.info('%s plugin has confirmed the presence of dustjs if helper <= 1.5.0' % (
-                    self.plugin)
+                log.info(
+                    f'{self.plugin} plugin has confirmed the presence of dustjs if helper <= 1.5.0'
                 )            
-        
+
         # Blind inj must be checked also with confirmed rendering
         self._detect_blind()
 
         if self.get('blind'):
 
-            log.info('%s plugin has confirmed blind injection' % (self.plugin))
+            log.info(f'{self.plugin} plugin has confirmed blind injection')
 
             # Clean up any previous unreliable render data
             self.delete('unreliable_render')
